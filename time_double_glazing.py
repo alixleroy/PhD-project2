@@ -27,7 +27,7 @@ def time_double_glazing(epsilon, w, num_steps, T, nx, ny, k):
 
   # Define boundary condition
   tol = 1E-14
-  u_D = Expression('x[0] == 1 ? 1:0', degree=1)
+  u_D = Expression('near(x[0], 1, tol) ? 1:0', degree=1, tol=tol)
 
   def boundary(x, on_boundary):
         return on_boundary
