@@ -61,7 +61,7 @@ def time_double_glazing(epsilon, w, num_steps, T, nx, ny, k):
       solve(a == L, u, bc)
 
       # Plot solution
-      plot(u, cmap='jet', scalarbar='h', text=__doc__)
+      # plot(u, cmap='jet', scalarbar='h', text=__doc__)
 
       # Compute u at the vertices and add them to the list
       u_approx = u.compute_vertex_values(mesh)
