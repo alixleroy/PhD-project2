@@ -62,7 +62,6 @@ for n in range(num_steps):
 #     u_D.t = t #does not depend on t 
 
     # Compute solution
-    print(n)
     solve(a == L, u, bc)
     # Plot solution
     # plot(u, cmap='jet', scalarbar='h', text=__doc__)
