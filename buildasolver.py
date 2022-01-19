@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 
 from vedo.dolfin import plot, Latex, clear, histogram
 
+
 T = 5.0            # final time
 num_steps = 10     # number of time steps
 dt = T / num_steps # time step size
@@ -18,9 +19,9 @@ epsilon = 1/200
 
 # Create mesh and define function space
 nx = ny = 30
+
 #mesh = UnitSquareMesh(nx, ny) #discrepency
 mesh = RectangleMesh(Point(-1, -1), Point(1, 1), nx, ny)
-
 V = FunctionSpace(mesh, 'P', 1)
 
 # Define boundary condition
@@ -40,10 +41,10 @@ u_n = project(u_D, V)
 # Define variational problem
 u = TrialFunction(V)
 v = TestFunction(V)
-f = Constant(1)
+f = Constant(0)
 
 # code the vector field
-w=Constant(1)  #np.array([1,1])
+#w=Constant(1)  #np.array([1,1])
 w = Expression(('2*x[1]*(1-x[0]*x[0])','-2*x[0]*(1-x[1]*x[1])'),degree=3)
 #w = Expression(('-20','-40'),degree=1)
 F = u*v*dx + epsilon*dt*dot(grad(u), grad(v))*dx + dt*dot(w,grad(u))*v*dx - (u_n + dt*f)*v*dx
@@ -64,7 +65,7 @@ for n in range(num_steps):
     # Compute solution
     solve(a == L, u, bc)
     # Plot solution
-    # plot(u, cmap='jet', scalarbar='h', text=__doc__)
+    plot(u, cmap='jet', scalarbar='h', text=__doc__)
 
 #     # Compute error at vertices
 #     u_e = interpolate(u_D, V)

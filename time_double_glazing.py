@@ -60,29 +60,31 @@ def time_double_glazing(epsilon, w, num_steps, T, nx, ny, k):
       # Compute solution
       solve(a == L, u, bc)
 
-      # Plot solution
+      # # Plot solution
       # plot(u, cmap='jet', scalarbar='h', text=__doc__)
 
       # Compute u at the vertices and add them to the list
       u_approx = u.compute_vertex_values(mesh)
-      t_u_list.append((t, u_approx))
+      t_u_list.append(u_approx)
 
       # Update previous solution
       u_n.assign(u)
 
-  print(t_u_list)
   
-  # Plot the norm of u against t
-  fig, ax = plt.subplots(figsize=(10,10))
-  t_list = [t_u_list[i][0] for i in range(len(t_u_list))]
-  u_norm_list = [np.linalg.norm(t_u_list[i][1]) for i in range(len(t_u_list))]
+  # # Plot the norm of u against t
+  # fig, ax = plt.subplots(figsize=(10,10))
+  # t_list = [t_u_list[i][0] for i in range(len(t_u_list))]
+  # u_norm_list = [np.linalg.norm(t_u_list[i][1]) for i in range(len(t_u_list))]
 
-  ax.plot(t_list, u_norm_list)
-  ax.set_xlabel('$t$', fontsize=12)
-  ax.set_ylabel('$||u||_2$', fontsize=12)
-  ax.set_title('$||u||_2$ against time $t$', fontsize=14)
+  # ax.plot(t_list, u_norm_list)
+  # ax.set_xlabel('$t$', fontsize=12)
+  # ax.set_ylabel('$||u||_2$', fontsize=12)
+  # ax.set_title('$||u||_2$ against time $t$', fontsize=14)
 
-  plt.show()
+  #plt.show()
+
+  return(t_u_list)
+
 
 # Call the function
 time_double_glazing(epsilon = 1/200,
@@ -93,3 +95,24 @@ time_double_glazing(epsilon = 1/200,
                     ny = 30,
                     k = 1
                     )
+
+# Vary the value of the wind 
+num_steps0 = 5
+M =10 #number of solutions generated 
+#u_sols = np.zeros((num_steps0,M))
+u_sols = []
+for i in range(M): 
+  gamma_i  = np.random.normal(1,1)
+  u_i = time_double_glazing(epsilon = 1/200,
+                    w = Expression(('gamma_i*2*x[1]*(1-x[0]*x[0])', 'gamma_i*-2*x[0]*(1-x[1]*x[1])'), degree=3,gamma_i=gamma_i),
+                    num_steps = num_steps0,
+                    T = 5.0,
+                    nx = 30,
+                    ny = 30,
+                    k = 1
+                    )
+  u_sols.append(u_i)
+
+print(u_sols)
+        
+
