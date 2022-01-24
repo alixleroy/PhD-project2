@@ -97,7 +97,7 @@ def modified_time_double_glazing(parameter,
       # Update previous solution
       u_n.assign(u)
   
-  if plot==True:
+  if plot_u_t==True:
       # Plot the norm of u against t
       fig, ax = plt.subplots(figsize=(10,10))
 
