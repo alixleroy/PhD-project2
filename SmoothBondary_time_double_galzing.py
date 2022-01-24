@@ -1,3 +1,5 @@
+### 1/ Setting up the PDE solver with smooth boundary conditions 
+
 """Double-glazing problem with smooth conditions.
   du/dt - epsilon*Laplace(u) + dot(grad(u), w) = 0 in the square (-1, 1)*(-1, 1)
   and time domain (0, T]
@@ -9,6 +11,8 @@ from fenics import *
 import numpy as np
 from vedo.dolfin import plot, Latex, clear, histogram
 import matplotlib.pyplot as plt
+import pickle 
+
 
 def time_double_glazing_smooth(tau, epsilon, w, num_steps, T, nx, ny, k):
   '''
@@ -63,7 +67,7 @@ def time_double_glazing_smooth(tau, epsilon, w, num_steps, T, nx, ny, k):
       solve(a == L, u, bc)
 
       # # Plot solution
-      plot(u, cmap='jet', scalarbar='h', text=__doc__)
+      # plot(u, cmap='jet', scalarbar='h', text=__doc__)
 
       # Compute u at the vertices and add them to the list
       u_approx = u.compute_vertex_values(mesh)
@@ -73,49 +77,118 @@ def time_double_glazing_smooth(tau, epsilon, w, num_steps, T, nx, ny, k):
       u_n.assign(u)
 
   
-  # Plot the norm of u against t
-  fig, ax = plt.subplots(figsize=(10,10))
-  t_list = [t_u_list[i][0] for i in range(len(t_u_list))]
-  u_norm_list = [np.linalg.norm(t_u_list[i][1]) for i in range(len(t_u_list))]
+  # # Plot the norm of u against t
+  # fig, ax = plt.subplots(figsize=(10,10))
+  # t_list = [t_u_list[i][0] for i in range(len(t_u_list))]
+  # u_norm_list = [np.linalg.norm(t_u_list[i][1]) for i in range(len(t_u_list))]
 
-  ax.plot(t_list, u_norm_list)
-  ax.set_xlabel('$t$', fontsize=12)
-  ax.set_ylabel('$||u||_2$', fontsize=12)
-  ax.set_title('$||u||_2$ against time $t$', fontsize=14)
+  # ax.plot(t_list, u_norm_list)
+  # ax.set_xlabel('$t$', fontsize=12)
+  # ax.set_ylabel('$||u||_2$', fontsize=12)
+  # ax.set_title('$||u||_2$ against time $t$', fontsize=14)
 
-  plt.show()
+  # plt.show()
+
 
   return(t_u_list)
 
-
-# Call the function
-time_double_glazing_smooth(tau=1/10,
-                    epsilon = 1/200,
-                    w = Expression(('2*x[1]*(1-x[0]*x[0])', '-2*x[0]*(1-x[1]*x[1])'), degree=3),
-                    num_steps = 10,
-                    T = 5.0,
-                    nx = 30,
-                    ny = 30,
-                    k = 1
-                    )
-
-# # Vary the value of the wind 
-# num_steps0 = 5
-# M =10 #number of solutions generated 
-# #u_sols = np.zeros((num_steps0,M))
-# u_sols = []
-# for i in range(M): 
-#   gamma_i  = np.random.normal(1,1)
-#   u_i = time_double_glazing(epsilon = 1/200,
-#                     w = Expression(('gamma_i*2*x[1]*(1-x[0]*x[0])', 'gamma_i*-2*x[0]*(1-x[1]*x[1])'), degree=3,gamma_i=gamma_i),
-#                     num_steps = num_steps0,
+# time_double_glazing_smooth(tau=1/10,
+#                     epsilon = 1/200,
+#                     w = Expression(('2*x[1]*(1-x[0]*x[0])', '-2*x[0]*(1-x[1]*x[1])'), degree=3),
+#                     num_steps = 10,
 #                     T = 5.0,
 #                     nx = 30,
 #                     ny = 30,
 #                     k = 1
 #                     )
-#   u_sols.append(u_i)
 
-# print(u_sols)
-        
+### 2/ Creating the data calling on the solver up the PDE solver with smooth boundary conditions 
+
+# The wind parameters can be designed in two ways : either we have a wind that is modified with a 
+# parameter alpha that varies (from a uniform distribution)
+
+# a) Pertubating the wind by multiplying by random log normal
+# gamma_i  = np.random.normal(1,1)
+# w = Expression(('gamma_i*2*x[1]*(1-x[0]*x[0])', 'gamma_i*-2*x[0]*(1-x[1]*x[1])'), degree=3,gamma_i=gamma_i),
+
+# Vary the value of the wind 
+n_mesh = 30
+num_steps0 = 5 # time steps 
+
+M =3 #number of solutions generated 
+u_sols_a = []   #np.zeros((num_steps0*M*n_mesh*n_mesh,1))
+y_sols_a = []   
+
+for i in range(M): 
+  gamma_i  = np.random.lognormal(1,1)
+  u_i = np.array(time_double_glazing_smooth(
+                    tau = 1,
+                    epsilon = 1/200,
+                    w = Expression(('gamma_i*2*x[1]*(1-x[0]*x[0])', 'gamma_i*-2*x[0]*(1-x[1]*x[1])'), degree=3,gamma_i=gamma_i),
+                    num_steps = num_steps0,
+                    T = 2.0,
+                    nx = n_mesh,
+                    ny = n_mesh,
+                    k = 1
+                    ))
+  ## Returns a (num_steps0, nmesh*(nmesh + 1)+1 ) vectors of solutions
+  # Choose a time T = 2.0 at which we analyse the solution and add noise to create observed data
+  u_iT = u_i[num_steps0-1,:]
+  y_sol = u_i + np.random.random(len(u_iT))
+
+  y_sols_a.extend(list(y_sol))
+  u_sols_a.extend(list(u_i)) #do not need to keep the structure of the data
+
+## Save the first condition
+smooth_boundary_winda = "smoothboundary_data/u_smooth_boundary_winda-ns="+str(num_steps0)+"-M="+str(M)+".csv"
+with open(smooth_boundary_winda, 'wb') as f:
+    pickle.dump(u_sols_a, f)
+
+## Save the first condition
+smooth_boundary_winda = "smoothboundary_data/y_smooth_boundary_winda-ns="+str(num_steps0)+"-M="+str(M)+".csv"
+with open(smooth_boundary_winda, 'wb') as f:
+    pickle.dump(y_sols_a, f)
+
+
+# ## b) Perturbating the wind by adding a divergence free perturbation
+# alpha = positive scaling parameter, log normal parameter? 
+# w = Expression(('2*x[1]*(1-x[0]*x[0])+alpha*(x[0]+x[1])', '-2*x[0]*(1-x[1]*x[1])+alpha*(x[0]-x[1])'), degree=3,alpha=alpha)
+
+# Vary the value of the wind 
+n_mesh = 30
+num_steps0 = 5 # time steps 
+
+M =3 #number of solutions generated 
+u_sols_a = []   #np.zeros((num_steps0*M*n_mesh*n_mesh,1))
+y_sols_a = []   
+
+for i in range(M): 
+  alpha  = np.random.lognormal(1,1)
+  u_i = np.array(time_double_glazing_smooth(
+                    tau = 1,
+                    epsilon = 1/200,
+                    w = Expression(('2*x[1]*(1-x[0]*x[0])+alpha*(x[0]+x[1])', '-2*x[0]*(1-x[1]*x[1])+alpha*(x[0]-x[1])'), degree=3,alpha=alpha),
+                    num_steps = num_steps0,
+                    T = 2.0,
+                    nx = n_mesh,
+                    ny = n_mesh,
+                    k = 1
+                    ))
+  ## Returns a (num_steps0, nmesh*(nmesh + 1)+1 ) vectors of solutions
+  # Choose a time T = 2.0 at which we analyse the solution and add noise to create observed data
+  u_iT = u_i[num_steps0-1,:]
+  y_sol = u_i + np.random.random(len(u_iT))
+
+  y_sols_a.extend(list(y_sol))
+  u_sols_a.extend(list(u_i)) #do not need to keep the structure of the data
+
+## Save the first condition
+smooth_boundary_winda = "smoothboundary_data/u_smooth_boundary_winda-ns="+str(num_steps0)+"-M="+str(M)+".csv"
+with open(smooth_boundary_winda, 'wb') as f:
+    pickle.dump(u_sols_a, f)
+
+## Save the first condition
+smooth_boundary_winda = "smoothboundary_data/y_smooth_boundary_winda-ns="+str(num_steps0)+"-M="+str(M)+".csv"
+with open(smooth_boundary_winda, 'wb') as f:
+    pickle.dump(y_sols_a, f)
 
