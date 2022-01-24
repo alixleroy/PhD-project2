@@ -171,7 +171,7 @@ def delayed_acceptance(true_parameter, alpha_0, sigma, dim, num_itr, burning_per
     y = generate_noise_data(0.05, parameter=true_parameter)
 
     alpha = [alpha_0]   # initialize the markov chain
-    A_0 = time_double_glazing(parameter = alpha_0[0])
+    A_0 = modified_time_double_glazing(parameter = alpha_0[0])
 
     I = np.eye(dim, dim)   # an identity matrix to use with the densities
     
@@ -180,7 +180,7 @@ def delayed_acceptance(true_parameter, alpha_0, sigma, dim, num_itr, burning_per
     while num_itr > i:
 
         alpha_prime = alpha_0 + sigma*np.random.normal(0, 1, dim)   # random walk proposal
-        A = time_double_glazing(parameter = alpha_prime[0])
+        A = modified_time_double_glazing(parameter = alpha_prime[0])
 
         # calculates the accetance ratio for the first rejection criterion
         acceptance_ratio = (likelihood(A, y, sigma) * prior(alpha_prime)) / (likelihood(A_0, y, sigma) * prior(alpha_0))
