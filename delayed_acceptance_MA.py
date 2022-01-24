@@ -30,7 +30,7 @@ def modified_time_double_glazing(parameter,
                                 ny = 10,
                                 k = 1,
                                 plot_u=False,
-                                plot=False):
+                                plot_u_t=False):
   '''
     parameter: a parameter that controls the intensity of the wind
     epsilon: the viscous parameter
