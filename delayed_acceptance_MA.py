@@ -165,6 +165,8 @@ def delayed_acceptance(true_parameter, alpha_0, sigma, dim, num_itr, burning_per
   burning_period: the percentage of the markov chain needed
   '''
   
+   tol = 1e-14  # threshold to compare the current proposal and previous proposal
+
     # generate data
     y = generate_noise_data(0.05, parameter=true_parameter)
 
@@ -173,32 +175,37 @@ def delayed_acceptance(true_parameter, alpha_0, sigma, dim, num_itr, burning_per
 
     I = np.eye(dim, dim)   # an identity matrix to use with the densities
     
-    for i in tqdm(range(num_itr-1)):
+    i = 0
 
-        alpha_prime = alpha[i] + sigma*np.random.normal(0, 1, dim)   # random walk proposal
-        A = modified_time_double_glazing(parameter = alpha_prime[0])
+    while num_itr > i:
+
+        alpha_prime = alpha_0 + sigma*np.random.normal(0, 1, dim)   # random walk proposal
+        A = time_double_glazing(parameter = alpha_prime[0])
 
         # calculates the accetance ratio for the first rejection criterion
-        acceptance_ratio = (likelihood(A, y, sigma) * prior(alpha_prime)) / (likelihood(A_0, y, sigma) * prior(alpha[i]))
+        acceptance_ratio = (likelihood(A, y, sigma) * prior(alpha_prime)) / (likelihood(A_0, y, sigma) * prior(alpha_0))
         
         # calculates the acceptance probability
         g = min(1, acceptance_ratio)
     
         # acceptance decision
         if g < np.random.uniform(0, 1):
-            alpha_prime = alpha[i]
+            alpha_prime = alpha_0
 
         # calculates the accetance ratio for the second rejection criterion
-        acceptance_ratio = (target(alpha_prime) * proposal(alpha[i], alpha_prime, sigma**2*I)) / (target(alpha[i]) * proposal(alpha_prime, alpha[i], sigma**2*I)) 
+        acceptance_ratio = (target(alpha_prime) * proposal(alpha_0, alpha_prime, sigma**2*I)) / (target(alpha_0) * proposal(alpha_prime, alpha_0, sigma**2*I)) 
         rho = min(1, acceptance_ratio)  
 
-        # acceptance decision
-        if rho > np.random.uniform(0, 1):
-            alpha.append(alpha_prime)
-        else:
-            alpha.append(alpha[i])
+        if abs(alpha_prime - alpha_0) > tol:   # will only proceed to the next stage if the current proposal is different from the previous one
+            # acceptance decision
+            if rho > np.random.uniform(0, 1):
+                alpha.append(alpha_prime)
+            else:
+                alpha.append(alpha_0)
 
         A_0 = A
+        alpha_0 = alpha_prime
+        i += 1
 
     # To generate a 1-D array for one dimensional parameter
     if dim==1:
@@ -221,6 +228,10 @@ def delayed_acceptance(true_parameter, alpha_0, sigma, dim, num_itr, burning_per
     plt.show()
 
     return alpha
+
+# call the function
+alpha = delayed_acceptance(true_parameter=1.0, alpha_0=np.array([3.0]), sigma=0.1, dim=1, num_itr=2000, burning_period=0.9)
+print(alpha)
 
 # call the function
 alpha = delayed_acceptance(true_parameter=1.0,
