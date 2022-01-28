@@ -1,0 +1,12 @@
+/tmp/tmpwytyu_u1/dolfin_expression_d3b8ccf7e6842aec3c18cd41305406df.cpp: In member function 'virtual void dolfin::dolfin_expression_d3b8ccf7e6842aec3c18cd41305406df::eval(Eigen::Ref<Eigen::Matrix<double, -1, 1> >, Eigen::Ref<const Eigen::Matrix<double, -1, 1> >) const':
+/tmp/tmpwytyu_u1/dolfin_expression_d3b8ccf7e6842aec3c18cd41305406df.cpp:64:39: error: 'aplha' was not declared in this scope; did you mean 'alpha'?
+   64 |           values[0] = 1 + x[0]*x[0] + aplha*x[1]*x[1] + beta*t;
+      |                                       ^~~~~
+      |                                       alpha
+/tmp/tmpwytyu_u1/dolfin_expression_d3b8ccf7e6842aec3c18cd41305406df.cpp: In member function 'virtual double dolfin::dolfin_expression_d3b8ccf7e6842aec3c18cd41305406df::get_property(std::string) const':
+/tmp/tmpwytyu_u1/dolfin_expression_d3b8ccf7e6842aec3c18cd41305406df.cpp:76:11: warning: this 'if' clause does not guard... [-Wmisleading-indentation]
+   76 |           if (name == "alpha") return alpha;          if (name == "beta") return beta;          if (name == "t") return t;
+      |           ^~
+/tmp/tmpwytyu_u1/dolfin_expression_d3b8ccf7e6842aec3c18cd41305406df.cpp:76:55: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the 'if'
+   76 |           if (name == "alpha") return alpha;          if (name == "beta") return beta;          if (name == "t") return t;
+      |                                                       ^~
