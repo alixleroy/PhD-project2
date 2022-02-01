@@ -1,33 +1,28 @@
-## 0 - Import packages 
+## 0 - Import package and set up parameters
+
 from fenics import *
 import numpy as np
 from vedo.dolfin import plot, Latex, clear, histogram
 import matplotlib.pyplot as plt
 import pickle 
-from SmoothBondary_time_double_galzing import time_double_glazing_smooth
-#import scipy.stats as stats 
+from solver_functions import solver_parameters, solver_dg
 
-## 1 - Generate the observed data 
-alpha_star = 0 #alpha star 
-num_steps0 = 5
-nx = ny = 5
-u_mn = time_double_glazing_smooth(tau=1/10,
-                    epsilon = 1/200,
-                    w = Expression(('exp(alpha)*2*x[1]*(1-x[0]*x[0])', 'exp(alpha)*-2*x[0]*(1-x[1]*x[1])'), degree=3,alpha=alpha_star),
-                    num_steps = num_steps0,
-                    T = 1.0,
-                    nx = 5,
-                    ny = 5,
-                    k = 1
-                    )
+## I - Set up the parameters of the PDE problems to resolve 
+T = 1 #until T =
+tau = 5 #value of tau
+epsilon=1/200 #value of epsilon
+def wind(alpha): #define the value of the wind 
+    return Expression(('exp(alpha)*2*x[1]*(1-x[0]*x[0])', 'exp(alpha)*-2*x[0]*(1-x[1]*x[1])'), degree=3,alpha=alpha)
 
-# compute noise and observed data
-u_mn = np.array(u_mn)
-noise  = np.random.normal(0,1,np.shape(u_mn))
+## II- Solve the problem and obtain observed data
+num_steps_true = 100 #number of steps to take
+nx_true=ny_true = 5 #space mesh
+dt_true = T / num_steps_true # time step size
+mesh_solver,V_solver,u_D,bc,u_n,u,v,f = solver_parameters(nx_true,ny_true,tau,epsilon) #run the background info needed to solve pde
+u_sols = solver_dg(wind(0),num_steps_true, dt_true,tau, epsilon,mesh_solver,V_solver,u_D,bc,u_n,u,v,f) #run the solver accross time
+y_sols = u_sols+ np.random.normal(0,1,np.shape(u_sols)) #get the true solutions by adding noise 
 
-true_y = u_mn + noise 
-
-## 2 - Metropolis hasting 
+## III- Metropolis hasting 
 
 ### a- compute ratio 
 def ratio(y,u1,u2,alpha1,alpha2,sigmaP,sigmaL,muP):
@@ -41,9 +36,9 @@ def logratio(y,u1,u2,alpha1,alpha2,sigmaP,sigmaL,muP):
 ### b - Random Walk Algorithm 
 
 #### lenght of chain 
-M = 10000
+M = 10
 
-#### Decide on prior distribution 
+### Decide on prior distribution 
 muP = 0
 sigmaP = 0.5
 
@@ -52,47 +47,31 @@ sigmaL = 0.5
 
 #### Run the loop 
 #### intial choice for alpha 
-alpha1 = np.random.normal(0,1,1)
+alpha1 = np.random.normal(1)
 
+#### intial parameters for a PDE solver 
+nx=ny=nx_true #for the PDE to solve in MCMC typically decrease the number of spatial steps taken
+num_steps_true = num_steps_true #for the PDE to solve in MCMC typically decrease the number of time steps taken
+dt_true = T/num_steps_true #typically get the dt
+mesh_solver,V_solver,u_D,bc,u_n,u,v,f = solver_parameters(nx,ny,tau,epsilon) # run the background info needed to solve pde
+u1 = solver_dg(wind(alpha1),num_steps_true, dt_true,tau, epsilon,mesh_solver,V_solver,u_D,bc,u_n,u,v,f) # run the solver accross time
 
-# get u1 
-u1 = time_double_glazing_smooth(tau=1/10,
-                    epsilon = 1/200,
-                    w = Expression(('exp(alpha)*2*x[1]*(1-x[0]*x[0])', 'exp(alpha)*-2*x[0]*(1-x[1]*x[1])'), degree=3,alpha=alpha1),
-                    num_steps = num_steps0,
-                    T = 1.0,
-                    nx = nx,
-                    ny = nx,
-                    k = 1
-)
-
-# list of saved values for alpha 
+# # list of saved values for alpha 
 alpha_list = np.zeros((M,1))
 
 for i in range(M):
-
-
     # get a guess: alpha2 
     alpha2 = np.random.normal(alpha1,0.1,1)
 
     #get u2 
-    u2 = time_double_glazing_smooth(tau=1/10,
-                epsilon = 1/200,
-                w = Expression(('exp(alpha)*2*x[1]*(1-x[0]*x[0])', 'exp(alpha)*-2*x[0]*(1-x[1]*x[1])'), degree=3,alpha=alpha2),
-                num_steps = num_steps0,
-                T = 1.0,
-                nx = nx,
-                ny = ny,
-                k = 1
-                )
-    #compute ratio from alpha1 to proposal alpha 2 
-    logratio12 = logratio(true_y,u1,u2,alpha1,alpha2,sigmaP,sigmaL,muP)
-        
+    u2=solver_dg(wind(alpha2),num_steps_true, dt_true,tau, epsilon,mesh_solver,V_solver,u_D,bc,u_n,u,v,f) # run the solver accross time
 
+    #compute ratio from alpha1 to proposal alpha 2 
+    logratio12 = logratio(y_sols,u1,u2,alpha1,alpha2,sigmaP,sigmaL,muP)
+    print("Log ratio"+str(logratio12))
     #draw h from uniform(0,1)
     h = np.log(np.random.uniform(0,1))
-    # print(h)
-    # print(logratio12)
+    print("h = "+str(h))
     if h <= np.min([0,logratio12]):
         alpha1=alpha2
         u1=u2
