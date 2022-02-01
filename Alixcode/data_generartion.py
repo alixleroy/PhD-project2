@@ -24,7 +24,7 @@ from SmoothBondary_time_double_galzing import time_double_glazing_smooth
 # print(u)
 
 ## II - Smooth boundary condition with a perturbed wind with multiplicative coefficient 
-alpha = 1 #alpha star 
+alpha = 0 #alpha star 
 num_steps0 = 10
 nx = ny = 5
 u_mn = time_double_glazing_smooth(tau=1/10,

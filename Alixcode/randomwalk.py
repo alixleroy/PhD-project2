@@ -8,12 +8,12 @@ from SmoothBondary_time_double_galzing import time_double_glazing_smooth
 #import scipy.stats as stats 
 
 ## 1 - Generate the observed data 
-alpha = 0 #alpha star 
-num_steps0 = 10
+alpha_star = 0 #alpha star 
+num_steps0 = 5
 nx = ny = 5
 u_mn = time_double_glazing_smooth(tau=1/10,
                     epsilon = 1/200,
-                    w = Expression(('exp(alpha)*2*x[1]*(1-x[0]*x[0])', 'exp(alpha)*-2*x[0]*(1-x[1]*x[1])'), degree=3,alpha=1),
+                    w = Expression(('exp(alpha)*2*x[1]*(1-x[0]*x[0])', 'exp(alpha)*-2*x[0]*(1-x[1]*x[1])'), degree=3,alpha=alpha_star),
                     num_steps = num_steps0,
                     T = 1.0,
                     nx = 5,
@@ -23,7 +23,8 @@ u_mn = time_double_glazing_smooth(tau=1/10,
 
 # compute noise and observed data
 u_mn = np.array(u_mn)
-noise  = np.random.random(np.shape(u_mn))
+noise  = np.random.normal(0,1,np.shape(u_mn))
+
 true_y = u_mn + noise 
 
 ## 2 - Metropolis hasting 
@@ -40,18 +41,19 @@ def logratio(y,u1,u2,alpha1,alpha2,sigmaP,sigmaL,muP):
 ### b - Random Walk Algorithm 
 
 #### lenght of chain 
-M = 10
+M = 10000
 
 #### Decide on prior distribution 
-muP = 2
-sigmaP = 0.1
+muP = 0
+sigmaP = 0.5
 
 #### Decide on likelihood distribution 
-sigmaL = 0.1
+sigmaL = 0.5
 
 #### Run the loop 
 #### intial choice for alpha 
-alpha1 = np.random.uniform(1,2,1)
+alpha1 = np.random.normal(0,1,1)
+
 
 # get u1 
 u1 = time_double_glazing_smooth(tau=1/10,
@@ -71,7 +73,7 @@ for i in range(M):
 
 
     # get a guess: alpha2 
-    alpha2 = np.random.normal(alpha1,)
+    alpha2 = np.random.normal(alpha1,0.1,1)
 
     #get u2 
     u2 = time_double_glazing_smooth(tau=1/10,
@@ -101,18 +103,18 @@ for i in range(M):
 
 #plot the values in the chain
 
-# fig, (ax1,ax2) = plt.subplots(1, 2, figsize=(18, 5)) #create the figure 
-plt.plot(alpha_list) #plot values of the element 0 of the chain 
-plt.show()
+fig, (ax1,ax2) = plt.subplots(1, 2, figsize=(18, 5)) #create the figure 
+ax1.plot(alpha_list) #plot values of the element 0 of the chain 
 
 bins = np.linspace(-3., 3., 100) #set bins to plot an histogram of the values of X^0
 step = bins[1]-bins[0] #adjust the setp 
 hist,bin_edges = np.histogram(alpha_list, bins=bins,density=True) # get the histogram
 hist_norm = hist/(sum(hist)*step) #normalise the histogram
-plt.bar(bin_edges[:-1], hist_norm, width = step, alpha = 0.5) #plot the histogram
+ax2.bar(bin_edges[:-1], hist_norm, width = step, alpha = 0.5) #plot the histogram
 
+fig.savefig("Alixcode/markov_chain.png")
 
-name_file = "Alix's code/alpha_res/chain-M="+str(M)+".csv"
+name_file = "Alixcode/alpha_res/chain-M="+str(M)+".csv"
 with open(name_file, 'wb') as f:
     pickle.dump(alpha_list, f)
 
