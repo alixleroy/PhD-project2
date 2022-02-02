@@ -16,7 +16,7 @@ def wind(alpha): #define the value of the wind
 
 ## II- Solve the problem and obtain observed data
 num_steps_true = 100 #number of steps to take
-nx_true=ny_true = 5 #space mesh
+nx_true=ny_true = 20 #space mesh
 dt_true = T / num_steps_true # time step size
 mesh_solver,V_solver,u_D,bc,u_n,u,v,f = solver_parameters(nx_true,ny_true,tau,epsilon) #run the background info needed to solve pde
 u_sols = solver_dg(wind(0),num_steps_true, dt_true,tau, epsilon,mesh_solver,V_solver,u_D,bc,u_n,u,v,f) #run the solver accross time
@@ -47,7 +47,7 @@ sigmaL = 0.5
 
 #### Run the loop 
 #### intial choice for alpha 
-alpha1 = np.random.normal(1)
+alpha1 = np.random.normal(0,0.5,1)
 
 #### intial parameters for a PDE solver 
 nx=ny=nx_true #for the PDE to solve in MCMC typically decrease the number of spatial steps taken
@@ -68,10 +68,10 @@ for i in range(M):
 
     #compute ratio from alpha1 to proposal alpha 2 
     logratio12 = logratio(y_sols,u1,u2,alpha1,alpha2,sigmaP,sigmaL,muP)
-    print("Log ratio"+str(logratio12))
+    # print("Log ratio"+str(logratio12))
     #draw h from uniform(0,1)
     h = np.log(np.random.uniform(0,1))
-    print("h = "+str(h))
+    # print("h = "+str(h))
     if h <= np.min([0,logratio12]):
         alpha1=alpha2
         u1=u2
