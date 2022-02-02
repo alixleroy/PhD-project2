@@ -8,8 +8,8 @@ import pickle
 ## I - Parameters of the solver 
 def solver_parameters(nx,ny,tau,epsilon):
     # Create mesh and define function space
-    mesh = RectangleMesh(Point(-1, -1), Point(1, 1), nx, ny)
-    V = FunctionSpace(mesh, "P", 1)
+    mesh = RectangleMesh(Point(-1, -1), Point(1, 1), nx, ny) 
+    V = FunctionSpace(mesh, "P", 1) 
 
     # Define boundary condition
     tol = 1E-14
@@ -55,7 +55,7 @@ def solver_dg(w,num_steps, dt,tau, epsilon,mesh,V,u_D,bc,u_n,u,v,f):
       solve(a == L, u, bc)
 
       # # Plot solution
-      # plot(u, cmap='jet', scalarbar='h', text=__doc__)
+      plot(u, cmap='jet', scalarbar='h', text=__doc__)
 
 
       # Compute u at the vertices and add them to the list
@@ -68,3 +68,6 @@ def solver_dg(w,num_steps, dt,tau, epsilon,mesh,V,u_D,bc,u_n,u,v,f):
 
 
   return(np.array(t_u_list))
+
+
+

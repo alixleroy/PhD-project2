@@ -37,17 +37,18 @@ def logratio(y,u1,u2,alpha1,alpha2,sigmaP,sigmaL,muP):
 
 #### lenght of chain 
 M = 10
+sigmaG = 0.5 #1/M #variance of the proposal distribution 
 
 ### Decide on prior distribution 
 muP = 0
-sigmaP = 0.5
+sigmaP = 1
 
 #### Decide on likelihood distribution 
-sigmaL = 0.5
+sigmaL = 1
 
 #### Run the loop 
 #### intial choice for alpha 
-alpha1 = np.random.normal(0,0.5,1)
+alpha1 = np.random.normal(0,1,1)
 
 #### intial parameters for a PDE solver 
 nx=ny=nx_true #for the PDE to solve in MCMC typically decrease the number of spatial steps taken
@@ -59,15 +60,23 @@ u1 = solver_dg(wind(alpha1),num_steps_true, dt_true,tau, epsilon,mesh_solver,V_s
 # # list of saved values for alpha 
 alpha_list = np.zeros((M,1))
 
+# save all proposed alpha 
+alpha_proposed = []
+
+# save all logratio 
+logratiosL = []
 for i in range(M):
     # get a guess: alpha2 
-    alpha2 = np.random.normal(alpha1,0.1,1)
+    alpha2 = np.random.normal(alpha1,sigmaG,1)
+    alpha_proposed.append(alpha2)
 
     #get u2 
     u2=solver_dg(wind(alpha2),num_steps_true, dt_true,tau, epsilon,mesh_solver,V_solver,u_D,bc,u_n,u,v,f) # run the solver accross time
 
     #compute ratio from alpha1 to proposal alpha 2 
     logratio12 = logratio(y_sols,u1,u2,alpha1,alpha2,sigmaP,sigmaL,muP)
+    logratiosL.append(logratio12)
+
     # print("Log ratio"+str(logratio12))
     #draw h from uniform(0,1)
     h = np.log(np.random.uniform(0,1))
@@ -81,6 +90,16 @@ for i in range(M):
         
 
 #plot the values in the chain
+print("Proposed alpha")
+print(alpha_proposed)
+
+print("\\")
+print("Logratios")
+print(logratiosL)
+
+print("\\")
+print("Alpha list")
+print(alpha_list)
 
 fig, (ax1,ax2) = plt.subplots(1, 2, figsize=(18, 5)) #create the figure 
 ax1.plot(alpha_list) #plot values of the element 0 of the chain 
