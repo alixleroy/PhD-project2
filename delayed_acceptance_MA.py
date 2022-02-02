@@ -165,7 +165,7 @@ def delayed_acceptance(true_parameter, alpha_0, sigma, dim, num_itr, burning_per
   burning_period: the percentage of the markov chain needed
   '''
   
-   tol = 1e-14  # threshold to compare the current proposal and previous proposal
+    tol = 1e-14  # threshold to compare the current proposal and previous proposal
 
     # generate data
     y = generate_noise_data(0.05, parameter=true_parameter)
