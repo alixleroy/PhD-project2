@@ -29,14 +29,17 @@ def ratio(y,u1,u2,alpha1,alpha2,sigmaP,sigmaL,muP):
     ratio = np.exp(1/(2*sigmaL**2)*(np.linalg.norm(y-u1)**2-np.linalg.norm(y-u2)**2)+ 1/(2*sigmaP**2)*(np.linalg.norm(alpha1-muP)**2-np.linalg.norm(alpha2-muP)**2)  ) 
     return ratio
 
-def logratio(y,u1,u2,alpha1,alpha2,sigmaP,sigmaL,muP):
-    ratio = 1/(2*sigmaL**2)*(np.linalg.norm(y-u1)**2-np.linalg.norm(y-u2)**2)+ 1/(2*sigmaP**2)*(np.linalg.norm(alpha1-muP)**2-np.linalg.norm(alpha2-muP)**2)
-    return ratio
+def log_ratio(y: np.array, u1: np.array, u2:np.array, alpha1: float, alpha2: float, sigma_p: float, sigma_l: float, mu_p: float) -> np.array:
+    '''
+    
+    '''
+    return 0.5 * ((((alpha1 - mu_p) ** 2 - (alpha2 - mu_p) ** 2) / sigma_p ** 2) + (np.linalg.norm(y - u1) ** 2 - np.linalg.norm(y - u2) ** 2) / sigma_l ** 2)
+
 
 ### b - Random Walk Algorithm 
 
 #### lenght of chain 
-M = 10
+M = 50
 sigmaG = 0.5 #1/M #variance of the proposal distribution 
 
 ### Decide on prior distribution 
@@ -74,7 +77,7 @@ for i in range(M):
     u2=solver_dg(wind(alpha2),num_steps_true, dt_true,tau, epsilon,mesh_solver,V_solver,u_D,bc,u_n,u,v,f) # run the solver accross time
 
     #compute ratio from alpha1 to proposal alpha 2 
-    logratio12 = logratio(y_sols,u1,u2,alpha1,alpha2,sigmaP,sigmaL,muP)
+    logratio12 = log_ratio(y_sols,u1,u2,alpha1,alpha2,sigmaP,sigmaL,muP)
     logratiosL.append(logratio12)
 
     # print("Log ratio"+str(logratio12))
