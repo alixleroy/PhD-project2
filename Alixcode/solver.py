@@ -42,7 +42,7 @@ def solver_run(alpha,V,mesh,u,v,u_n,f,u_D,bc,tau, epsilon, num_steps, T):
   t = 0
 
   # Create VTK file for saving solution
-  vtkfile = File('solution.pvd')
+  vtkfile = File('Alixcode/alixswork/solution.pvd')
 
   # list to store t and u
   t_u_list = []
@@ -57,7 +57,7 @@ def solver_run(alpha,V,mesh,u,v,u_n,f,u_D,bc,tau, epsilon, num_steps, T):
       solve(a == L, u, bc)
 
       # # # Plot solution
-      plot(u, cmap='jet', scalarbar='h', text=__doc__)
+      # plot(u, cmap='jet', scalarbar='h', text=__doc__)
 
       # Save to file and plot solution
       vtkfile << (u, t)
@@ -69,7 +69,6 @@ def solver_run(alpha,V,mesh,u,v,u_n,f,u_D,bc,tau, epsilon, num_steps, T):
       # Update previous solution
       u_n.assign(u)
 
-  interactive()
   return(np.array(t_u_list))
 
 ## Run the metropolis hasting algorithm
