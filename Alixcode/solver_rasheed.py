@@ -84,8 +84,8 @@ def exponential_time_double_glazing(parameter,
       # Compute u at the vertices and add them to the list
       u_approx = u.compute_vertex_values(mesh)
       t_list.append(t)
-      #u_list.append(np.linalg.norm(u_approx))
-      u_list.append(u_approx)
+      u_list.append(np.linalg.norm(u_approx))
+      #u_list.append(u_approx)
 
 
       # Update previous solution
