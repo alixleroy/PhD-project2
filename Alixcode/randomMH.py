@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import typing
 from typing import Callable, Tuple, List, Union
 import pickle
-from solver import solver_para, solver_run
-
+from solver_alix import solver_para, solver_run
+import time
 
 def log_ratio(y: np.array, u1: np.array, u2:np.array, alpha1: float, alpha2: float, sigma_p: float, sigma_l: float, mu_p: float) -> np.array:
     '''
@@ -31,15 +31,15 @@ def random_walk_metropolis(y: np.array, alpha0: float, iterations: int, sigma_q:
     alpha1 = alpha0 #initialise the first steps 
 
     # Compute the solutions u with alpha = alpha 0 
-    Vmesh,mesh = solver_para(nx,ny)
-    u1 = solver_run(alpha1,Vmesh,mesh,tau, epsilon, num_steps, T)
+    Vmesh,mesh,u,v,u_n,f,u_D,bc= solver_para(nx,ny,tau)
+    u1 = solver_run(alpha1,Vmesh,mesh,u,v,u_n,f,u_D,bc,tau, epsilon, num_steps, T)
 
     for i in range(iterations):
 
 
         alpha2 = np.random.normal(alpha1, sigma_q)
 
-        u2 = solver_run(alpha2,Vmesh,mesh,tau, epsilon, num_steps, T)
+        u2 = solver_run(alpha2,Vmesh,mesh,u,v,u_n,f,u_D,bc,tau, epsilon, num_steps, T)
 
         A = log_ratio(y, u1, u2, alpha1, alpha2, sigma_p, sigma_l, mu_p)
 
@@ -69,10 +69,11 @@ def random_walk_metropolis(y: np.array, alpha0: float, iterations: int, sigma_q:
 ## Run the metropolis hasting algorithm
 
 alpha0 = 1 # Initial value of alpha
-iterations = 10 # Lenght of the MCMC chain
 
-tau = 1/10 #Value of tau
-epsilon = 1/200 #
+iterations = 5000  # Lenght of the MCMC chain
+
+tau =1 #Value of tau
+epsilon = 1/20 #
 num_steps = 100 #number of time steps taken
 T = 5.0 #final time 
 nx = 30 #size of the grid
@@ -93,19 +94,23 @@ Vmesh,mesh,u,v,u_n,f,u_D,bc= solver_para(nx_star,ny_star,tau)
 u_star = solver_run(alpha_star,Vmesh,mesh,u,v,u_n,f,u_D,bc,tau, epsilon, num_steps, T)
 y_star = u_star + np.random.normal(np.zeros(np.shape(u_star)), noise_star)
 
-# alpha_list, prop_list, A_list, K_list = random_walk_metropolis(y_star, alpha0, iterations, sigma_q, sigma_p, sigma_l, mu_p, tau, epsilon, num_steps, T, nx, ny)
+time1 = time.time()
+alpha_list, prop_list, A_list, K_list = random_walk_metropolis(y_star, alpha0, iterations, sigma_q, sigma_p, sigma_l, mu_p, tau, epsilon, num_steps, T, nx, ny)
+time2 =time.time()-time1 
+print(time2)
 
-# fig, (ax1,ax2) = plt.subplots(1, 2, figsize=(18, 5)) #create the figure 
-# ax1.plot(alpha_list) #plot values of the element 0 of the chain 
 
-# bins = np.linspace(-3., 3., 100) #set bins to plot an histogram of the values of X^0
-# step = bins[1]-bins[0] #adjust the setp 
-# hist,bin_edges = np.histogram(alpha_list, bins=bins,density=True) # get the histogram
-# hist_norm = hist/(sum(hist)*step) #normalise the histogram
-# ax2.bar(bin_edges[:-1], hist_norm, width = step, alpha = 0.5) #plot the histogram
+fig, (ax1,ax2) = plt.subplots(1, 2, figsize=(18, 5)) #create the figure 
+ax1.plot(alpha_list) #plot values of the element 0 of the chain 
 
-# fig.savefig("Alixcode/markov_chain.png")
+bins = np.linspace(-3., 3., 100) #set bins to plot an histogram of the values of X^0
+step = bins[1]-bins[0] #adjust the setp 
+hist,bin_edges = np.histogram(alpha_list, bins=bins,density=True) # get the histogram
+hist_norm = hist/(sum(hist)*step) #normalise the histogram
+ax2.bar(bin_edges[:-1], hist_norm, width = step, alpha = 0.5) #plot the histogram
 
-# name_file = "Alixcode/alpha_res/chain-M="+str(iterations)+".csv"
-# with open(name_file, 'wb') as f:
-#     pickle.dump(alpha_list, f)
+fig.savefig("Alixcode/markov_chain.png")
+
+name_file = "Alixcode/alpha_res/chain-M="+str(iterations)+".csv"
+with open(name_file, 'wb') as f:
+    pickle.dump(alpha_list, f)

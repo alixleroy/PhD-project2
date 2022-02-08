@@ -18,6 +18,15 @@ def convection_diffusion(epsilon, w, nx, ny, k):
     mesh = RectangleMesh(Point(-1, -1), Point(1, 1), nx, ny)
     V = FunctionSpace(mesh, "P", k)
     
+    
+    # Define boundary condition
+    u_D = Expression('x[0]==1 ? 1:0',degree=1)
+
+    def boundary(x, on_boundary):
+        return on_boundary
+
+    bc = DirichletBC(V, u_D, boundary)
+    '''
     # Define boundary condition
     u_L1 = Expression('0', degree=0)
     def boundary_L1(x, on_boundary):
@@ -49,6 +58,7 @@ def convection_diffusion(epsilon, w, nx, ny, k):
     bc_R2 = DirichletBC(V, u_R2, boundary_R2)
 
     bcs = [bc_L1, bc_L2, bc_R1, bc_R2]
+    '''
 
     # Define variational problem
     u = TrialFunction(V)
@@ -65,7 +75,7 @@ def convection_diffusion(epsilon, w, nx, ny, k):
 
     # Compute solution
     u = Function(V)
-    solve(a == L, u, bcs)
+    solve(a == L, u, bc)
     
     # Plot the solution
     plot(u, cmap='jet', scalarbar='h', text=__doc__)
