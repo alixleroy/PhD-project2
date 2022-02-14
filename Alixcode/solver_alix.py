@@ -6,16 +6,15 @@ import matplotlib.pyplot as plt
 import pickle 
 import time
 
-
-def solver_all(nx,ny,tau,alpha, epsilon, num_steps, T):
+def solver(nx,ny,tau,parameter, epsilon, dt, T,w):
 
   # Create mesh and define function space
   mesh = RectangleMesh(Point(-1, -1), Point(1, 1), nx, ny)
   V = FunctionSpace(mesh, "P", 1)
-  
+
   # Define boundary condition
   tol = 1E-14
-  u_D = Expression('near(x[0], 1, tol) ? pow(1-x[1],4)*exp(-t*tau):0', degree=4, tol=tol,tau=tau, t=0)
+  u_D = Expression('near(x[0], 1, tol) ? (1-pow(x[1], 4))*(1-exp(-t / tau)):0', degree=4, tol=tol, tau=tau, t=0)
 
   def boundary(x, on_boundary):
         return on_boundary
@@ -30,55 +29,56 @@ def solver_all(nx,ny,tau,alpha, epsilon, num_steps, T):
   v = TestFunction(V)
   f = Constant(0.0)
   
-  dt = 1 / num_steps # time step size
-  w = Expression(('exp(alpha)*2*x[1]*(1-x[0]*x[0])', 'exp(alpha)*-2*x[0]*(1-x[1]*x[1])'),alpha = alpha,degree=3)  #define the wind
 
-  F = u*v*dx + epsilon*dt*dot(grad(u), grad(v))*dx + dt*dot(w, grad(u))*v*dx - (u_n + dt*f)*v*dx
-  
+  F = u*v*dx + epsilon*dt*dot(grad(u), grad(v))*dx + dt*exp(parameter)*dot(w, grad(u))*v*dx - (u_n + dt*f)*v*dx
   a, L = lhs(F), rhs(F)
 
   # Time-stepping
+  u = Function(V)
   t = 0
 
-  # Create VTK file for saving solution
-  # namefile = str(alpha)+"-alpha.pvd"
-  # vtkfile = File("Alixcode/alixswork/"+namefile)
-  
-
   # list to store t and u
-  u = Function(V)
-  t_u_list = []
+  u_list = []
+  unorm_list = []
+  t_list = []
 
-  for n in range(int(T)*num_steps):
-
-      # Update current time
-      t += dt
-      u_D.t = t #update the time in the boundary condition
-
-
+  # get the right dt in the list dt_list, get the value of increment 
+  while t<T:
+      
       # Compute solution
       solve(a == L, u, bc)
 
-
-      
       # Compute u at the vertices and add them to the list
       u_approx = u.compute_vertex_values(mesh)
-      t_u_list.append(u_approx)
+      u_list.append(u_approx)
+
+      unorm_list.append(np.linalg.norm(u_approx))
+
 
       # Update previous solution
       u_n.assign(u)
+      t_list.append(t)
+
+      # Update current time
+      t += dt 
+      u_D.t = t #update the time in the boundary condition
+
   
-  return(np.array(t_u_list))
+  u_list = np.array(u_list)
+  unorm_list = np.array(unorm_list)
+  t_list = np.array(t_list)
+  
+  return(u_list, unorm_list, t_list)
 
+def solver_ada(nx,ny,tau,parameter, epsilon, dt_list, T,w):
 
-def solver_para(nx,ny,tau):
   # Create mesh and define function space
   mesh = RectangleMesh(Point(-1, -1), Point(1, 1), nx, ny)
   V = FunctionSpace(mesh, "P", 1)
-  
+
   # Define boundary condition
   tol = 1E-14
-  u_D = Expression('near(x[0], 1, tol) ? pow(1-x[1],4)*exp(-t*tau):0', degree=4, tol=tol,tau=tau, t=0)
+  u_D = Expression('near(x[0], 1, tol) ? (1-pow(x[1], 4))*(1-exp(-t / tau)):0', degree=4, tol=tol, tau=tau, t=0)
 
   def boundary(x, on_boundary):
         return on_boundary
@@ -92,80 +92,184 @@ def solver_para(nx,ny,tau):
   u = TrialFunction(V)
   v = TestFunction(V)
   f = Constant(0.0)
-  
-  return(V,mesh,u,v,u_n,f,u_D,bc)
 
-def solver_run(alpha,V,mesh,u,v,u_n,f,u_D,bc,tau, epsilon, num_steps, T):
-  
-  dt = 1 / num_steps # time step size
-  w = Expression(('exp(alpha)*2*x[1]*(1-x[0]*x[0])', 'exp(alpha)*-2*x[0]*(1-x[1]*x[1])'),alpha = alpha,degree=3)  #define the wind
+  ## initialise the time step
+  dt = dt_list[0]
+  idt = Constant(dt)
 
-  F = u*v*dx + epsilon*dt*dot(grad(u), grad(v))*dx + dt*dot(w, grad(u))*v*dx - (u_n + dt*f)*v*dx
-  
+  F = u*v*dx + epsilon*idt*dot(grad(u), grad(v))*dx + idt*exp(parameter)*dot(w, grad(u))*v*dx - (u_n + idt*f)*v*dx
   a, L = lhs(F), rhs(F)
 
   # Time-stepping
+  u = Function(V)
   t = 0
 
-  # Create VTK file for saving solution
-  # namefile = str(alpha)+"-alpha.pvd"
-  # vtkfile = File("Alixcode/alixswork/"+namefile)
-  
-
   # list to store t and u
-  u = Function(V)
-  t_u_list = []
+  u_list = []
+  unorm_list = []
+  t_list = []
 
-  for n in range(int(T)*num_steps):
+  i=0
+  while t<T:
+      i=i+1
+      # Compute solution
+      solve(a == L, u, bc)
+
+      # Compute u at the vertices and add them to the list
+      u_approx = u.compute_vertex_values(mesh)
+      u_list.append(u_approx)
+
+      unorm_list.append(np.linalg.norm(u_approx))
+
+
+      # Update previous solution
+      u_n.assign(u)
+  
+      # Time 
+      t_list.append(t)
 
       # Update current time
+      dt +=dt_list[i]
       t += dt
+      idt.assign(dt)
+
       u_D.t = t #update the time in the boundary condition
+
+
+  u_list = np.array(u_list)
+  unorm_list = np.array(unorm_list)
+  t_list = np.array(t_list)
+
+  return(u_list, unorm_list, t_list)
+
+def solver_para(nx,ny):
+  # Create mesh and define function space
+  mesh = RectangleMesh(Point(-1, -1), Point(1, 1), nx, ny)
+  V = FunctionSpace(mesh, "P", 1)
+
+  # Define variational problem
+  u = TrialFunction(V)
+  v = TestFunction(V)
+  f = Constant(0)  
+  return( mesh, V, u, v, f)
+
+def solver_loop(parameter,mesh,V,u,v,f,tau, epsilon, num_steps, T,w):
+
+
+  dt = 1 / num_steps # time step size
+
+  # Define boundary condition
+  tol = 1E-14
+  u_D = Expression('near(x[0], 1, tol) ? (1-pow(x[1], 4))*(1-exp(-t / tau)):0', degree=4, tol=tol, tau=tau, t=0)
+
+  def boundary(x, on_boundary):
+        return on_boundary
+
+  bc = DirichletBC(V, u_D, boundary)
+
+  # Define initial value
+  u_n = project(u_D, V)
+
+  # Define the linear and bilinear forms
+  F = u*v*dx + epsilon*dt*dot(grad(u), grad(v))*dx + dt*exp(parameter)*dot(w, grad(u))*v*dx - (u_n + dt*f)*v*dx
+  a, L = lhs(F), rhs(F)
+
+  # Time-stepping
+  u = Function(V)
+  t = 0
+
+  #list to save values 
+  t_list = []
+  u_list =[]
+  unorm_list = []
+  while t<T: 
 
 
       # Compute solution
       solve(a == L, u, bc)
 
-      # # # Plot solution
-      # plot(u, cmap='jet', scalarbar='h', text=__doc__)
-
-      # Save to file and plot solution
-      # vtkfile << (u, t)
-      
       # Compute u at the vertices and add them to the list
       u_approx = u.compute_vertex_values(mesh)
-      t_u_list.append(u_approx)
+      u_list.append(u_approx)
+
+      unorm_list.append(np.linalg.norm(u_approx))
+
 
       # Update previous solution
       u_n.assign(u)
+
+      # Update current time
+      t_list.append(t)
+      t += dt
+      u_D.t = t #update the time in the boundary condition
   
-  return(np.array(t_u_list))
+  u_list = np.array(u_list)
+  unorm_list = np.array(unorm_list)
+  t_list = np.array(t_list)
+  
+  return(u_list, unorm_list, t_list)
+
+# def solver_loop_ada(parameter,mesh,V,u,v,f,tau, epsilon, dt_max, T,w):
+
 
 # Run the metropolis hasting algorithm
+#   # Define boundary condition
+#   tol = 1E-14
+#   u_D = Expression('near(x[0], 1, tol) ? (1-pow(x[1], 4))*(1-exp(-t / tau)):0', degree=4, tol=tol, tau=tau, t=0)
 
-# alpha0 = 1 # Initial value of alpha
+#   def boundary(x, on_boundary):
+#         return on_boundary
 
-# iterations = 10 # Lenght of the MCMC chain
+#   bc = DirichletBC(V, u_D, boundary)
 
-# tau =1 #Value of tau
-# epsilon = 1/20 #
-# num_steps = 100 #number of time steps taken
-# T = 5.0 #final time 
-# nx = 30 #size of the grid
-# ny = 30 #size of the grid
+#   # Define initial value
+#   u_n = project(u_D, V)
 
-# sigma_q = 0.5 #variance of the guess proposal
-# sigma_p = 1 #variance of the prior
-# mu_p = 0 #mean of the proposal 
-# sigma_l = 0.2 #variance of the likelihood
-        
+#   ## initialise the time step
+#   dt = dt_max*0.1
+#   idt = Constant(dt)
 
-# ## Generate the observed data
-# noise_star = 1 #noise added to the data
-# alpha_star = 0
-# nx_star=30
-# ny_star=30 
-# Vmesh,mesh,u,v,u_n,f,u_D,bc= solver_para(nx_star,ny_star,tau)
-# u_star = solver_run(alpha_star,Vmesh,mesh,u,v,u_n,f,u_D,bc,tau, epsilon, num_steps, T)
-# y_star = u_star + np.random.normal(np.zeros(np.shape(u_star)), noise_star)
+#   # Define the linear and bilinear forms
+#   F = u*v*dx + epsilon*dt*dot(grad(u), grad(v))*dx + dt*exp(parameter)*dot(w, grad(u))*v*dx - (u_n + dt*f)*v*dx
+#   a, L = lhs(F), rhs(F)
 
+#   # Time-stepping
+#   u = Function(V)
+#   t = 0
+
+#   #list to save values 
+#   t_list = []
+#   u_list =[]
+#   unorm_list = []
+
+#   ##
+#   while t<T:
+
+#       # Compute solution
+#       solve(a == L, u, bc)
+
+#       # Compute u at the vertices and add them to the list
+#       u_approx = u.compute_vertex_values(mesh)
+#       u_list.append(u_approx)
+
+#       unorm_list.append(np.linalg.norm(u_approx))
+
+
+#       # Update previous solution
+#       u_n.assign(u)
+  
+#       # Update current time
+#       t_list.append(t)
+
+#       # Update current time
+#       dt +=((1-np.exp(-t/tau))*0.9+0.1)*dt_max
+#       t += dt
+#       idt.assign(dt)
+
+#       u_D.t = t #update the time in the boundary condition
+      
+#   u_list = np.array(u_list)
+#   unorm_list = np.array(unorm_list)
+#   t_list = np.array(t_list)
+  
+#   return(u_list, unorm_list, t_list)
