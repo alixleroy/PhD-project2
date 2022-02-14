@@ -141,7 +141,7 @@ def solver_run(alpha,V,mesh,u,v,u_n,f,u_D,bc,tau, epsilon, num_steps, T):
   
   return(np.array(t_u_list))
 
-## Run the metropolis hasting algorithm
+# Run the metropolis hasting algorithm
 
 # alpha0 = 1 # Initial value of alpha
 

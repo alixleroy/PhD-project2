@@ -196,14 +196,15 @@ def mesh_double_glazing(tau, epsilon, num_steps, T, mesh, V, alpha):
       # Update previous solution
       u_n.assign(u)
 
-  return(np.array(t_u_list))
+  return(t_u_list)
+
 if __name__ == "__main__":
 
     def main():
 
         tau = 1/10
         epsilon = 1/200
-        num_steps = 10
+        num_steps = 100
         T = 5.0
         nx = 30
         ny = 30
@@ -214,7 +215,7 @@ if __name__ == "__main__":
 
     
 
-    u = main()
+    u, mesh = main()
     print(np.shape(u))
 
 

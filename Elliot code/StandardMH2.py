@@ -79,7 +79,6 @@ if __name__ == "__main__":
         num_steps = 100
         nx = 30
         ny = 30
-        T = 5.0
         k = 1
 
         sigma_q = 0.5

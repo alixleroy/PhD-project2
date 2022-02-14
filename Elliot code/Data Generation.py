@@ -16,7 +16,7 @@ def log_ratio(y: np.array, u1: np.array, u2:np.array, alpha1: float, alpha2: flo
 
 def random_walk_metropolis(y: np.array, alpha0: float, iterations: int, sigma_q: float, sigma_p: float, sigma_l: float, mu_p: float, tau: float, epsilon: float, num_steps: int, dt_max: float, nx: int, ny: int, k: int) -> np.array:
     '''
-
+    hello
     '''
     
     alpha_list = [alpha0]
