@@ -111,7 +111,6 @@ def solver_ada(nx,ny,tau,parameter, epsilon, dt_list, T,w):
 
   i=0
   while t<T:
-      i=i+1
       # Compute solution
       solve(a == L, u, bc)
 
@@ -129,8 +128,10 @@ def solver_ada(nx,ny,tau,parameter, epsilon, dt_list, T,w):
       t_list.append(t)
 
       # Update current time
-      dt +=dt_list[i]
+      dt =dt_list[i]
       t += dt
+      t = round(t,10) # avoid numerical errors
+      i = i+1
       idt.assign(dt)
 
       u_D.t = t #update the time in the boundary condition
@@ -154,7 +155,6 @@ def solver_para(nx,ny):
   return( mesh, V, u, v, f)
 
 def solver_loop(parameter,mesh,V,u,v,f,tau, epsilon, num_steps, T,w):
-
 
   dt = 1 / num_steps # time step size
 
@@ -201,6 +201,7 @@ def solver_loop(parameter,mesh,V,u,v,f,tau, epsilon, num_steps, T,w):
       # Update current time
       t_list.append(t)
       t += dt
+      t = round(t,10)
       u_D.t = t #update the time in the boundary condition
   
   u_list = np.array(u_list)
@@ -212,7 +213,6 @@ def solver_loop(parameter,mesh,V,u,v,f,tau, epsilon, num_steps, T,w):
 # def solver_loop_ada(parameter,mesh,V,u,v,f,tau, epsilon, dt_max, T,w):
 
 
-# Run the metropolis hasting algorithm
 #   # Define boundary condition
 #   tol = 1E-14
 #   u_D = Expression('near(x[0], 1, tol) ? (1-pow(x[1], 4))*(1-exp(-t / tau)):0', degree=4, tol=tol, tau=tau, t=0)
