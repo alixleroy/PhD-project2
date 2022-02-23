@@ -206,8 +206,8 @@ if __name__ == "__main__":
         epsilon = 1/200
         num_steps = 100
         T = 5.0
-        nx = 30
-        ny = 30
+        nx = 1000
+        ny = 1000
         k = 1
         alpha = 3
 
