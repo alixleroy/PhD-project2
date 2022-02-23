@@ -15,6 +15,8 @@ def stretch_mesh(
         nx:             Int         Number of vertices on horizontal axis.
         ny:             Int         Number of vertices on vertical axis.
         s:              Float       Stretching coefficient.
+    Outputs:
+        mesh:           Mesh        Mesh stretched towards right vertical boundary.
     '''
     # Create uniform rectangle mesh.
     a, b = BottomPoint[0], TopPoint[0]
@@ -34,7 +36,7 @@ def stretch_mesh(
 if __name__ == "__main__":
 
     from vedo.dolfin import plot
-    
+
     def main():
         mesh = stretch_mesh()
         plot(mesh, title="stretched mesh", interactive=True)
