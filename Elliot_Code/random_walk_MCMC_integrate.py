@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import pickle 
 import time
 
-from function_solver import solver_para, solver_run
+from Function_Solver import solver_para, solver_run
 
 
 def time_organiser(f1_list_raw, f2_list_raw, others):
@@ -18,14 +18,14 @@ def time_organiser(f1_list_raw, f2_list_raw, others):
     return f1_list, f2_list
 
 
-def questionable_norm(f1_list, f2_list, number_of_timesteps = 10, initial_jump = 5) -> float:
+def questionable_norm(f1_list, f2_list, number_of_timesteps_considered = 10, initial_jump = 5) -> float:
     '''
     Calculate the questionable norm error between the two funcitons f1 & f2 defined on [-1,1]^2.
     '''
     L2_list = []
         
     k = len(f1_list)
-    sparstiy = int((np.floor(k - initial_jump) / number_of_timesteps))
+    sparstiy = int((np.floor(k - initial_jump) / number_of_timesteps_considered))
     
     for i in range(initial_jump, k, sparstiy):
         L2_list.append(errornorm(f1_list[i], f2_list[i], 'L2'))
@@ -40,7 +40,7 @@ def log_ratio(y: np.array, u1: np.array, u2:np.array, alpha1: float, alpha2: flo
     return 0.5 * ((((alpha1 - mu_p) ** 2 - (alpha2 - mu_p) ** 2) / sigma_p ** 2) + (f1_quest_norm ** 2 - f2_quest_norm ** 2)/ sigma_l ** 2)
 
 
-def random_walk_metropolis(alpha0, y, sigma_q, sigma_p, sigma_l, mu_p, nx, ny, tau, epsilon, iterations, num_steps):
+def random_walk_metropolis(alpha0, y, sigma_q, sigma_p, sigma_l, mu_p, nx, ny, tau, epsilon, iterations, num_steps, number_of_timesteps_considered):
     '''
     Carries out iterations of the random walk Metropolis-Hastings Algorithm using likelihood estimator.
     '''
@@ -53,13 +53,13 @@ def random_walk_metropolis(alpha0, y, sigma_q, sigma_p, sigma_l, mu_p, nx, ny, t
 
     u1 = solver_run(alpha1, V, u, v, u_n, f, u_D, bc, epsilon, num_steps)
 
-    u1_quest_norm = questionable_norm(y, u1)
+    u1_quest_norm = questionable_norm(y, u1, number_of_timesteps_considered)
 
     for i in range(iterations):
 
         alpha2 = np.random.normal(alpha1, sigma_q)
         u2 = solver_run(alpha2, V, u, v, u_n, f, u_D, bc, epsilon, num_steps)
-        u2_quest_norm = questionable_norm(y, u2)
+        u2_quest_norm = questionable_norm(y, u2, number_of_timesteps_considered)
 
         A = log_ratio(y, u1, u2, alpha1, alpha2, sigma_p, sigma_l, mu_p, u1_quest_norm, u2_quest_norm)
 
@@ -82,20 +82,21 @@ if __name__ == "__main__":
 
         alpha_star = 0
         alpha0 = 1
-        iterations = 100
-
+        iterations = 10
         tau = 1/10
         epsilon = 1/20
         num_steps = 100
-        nx = 30
-        ny = 30
+        nx = 36
+        ny = 36
 
         sigma_q = 0.1
         sigma_p = 1
         mu_p = 0
         sigma_l = 0.2
-        
-        var_noise = 0.1
+
+        number_of_timesteps_considered = 10
+
+        var_noise = 0.3
 
         V, u, v, u_n, f, u_D, bc, mesh = solver_para(nx, ny, tau)
         y_star = solver_run(alpha_star, V, u, v, u_n, f, u_D, bc, epsilon, num_steps)
@@ -113,15 +114,12 @@ if __name__ == "__main__":
 
         #+ np.random.normal(np.zeros(np.shape(y_star)), var_noise)
 
-        alpha_list = random_walk_metropolis(alpha0, y, sigma_q, sigma_p, sigma_l, mu_p, nx, ny, tau, epsilon, iterations, num_steps)
+        alpha_list = random_walk_metropolis(alpha0, y, sigma_q, sigma_p, sigma_l, mu_p, nx, ny, tau, epsilon, iterations, num_steps, number_of_timesteps_considered)
 
         return alpha_list
-
+    
     alpha_list = main()
 
     print(alpha_list)
-
-
-
 
 

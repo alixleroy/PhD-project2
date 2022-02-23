@@ -31,7 +31,8 @@ def solver_para(nx,ny,tau):
 
 def solver_run(alpha, V, u, v, u_n, f, u_D, bc, epsilon, num_steps):
   
-  dt = 0.1 # time step size
+  dt = 0.01 # time step size
+
   w = Expression(('exp(alpha)*2*x[1]*(1-x[0]*x[0])', 'exp(alpha)*-2*x[0]*(1-x[1]*x[1])'),alpha = alpha,degree=3)  #define the wind
 
   F = u * v * dx + epsilon * dt * dot(grad(u), grad(v)) * dx + dt * dot(w, grad(u)) * v * dx - (u_n + dt * f) * v * dx
@@ -93,5 +94,3 @@ if __name__ == "__main__":
     u, mesh = main()
 
     print(errornorm(u[0], u[90], 'L2'))
-
-    
