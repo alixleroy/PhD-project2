@@ -1,0 +1,124 @@
+from fenics import *
+import numpy as np
+from vedo.dolfin import plot, Latex, clear, histogram
+import matplotlib.pyplot as plt
+
+from Interpolate_Solver import solver_para, solver_run
+from Stretch_Mesh import stretch_mesh
+
+def time_organiser(y_data, timestep = 0.01):
+    '''
+    Arranges y_data to match likelihood data in time; to be improved with addititon of adaptive timestepping
+    '''
+    scale = int(timestep/0.00001)
+    y = np.array(y_data)
+    return y[0::scale][:-1]
+
+def log_ratio(y,
+             u1,
+             u2,
+             alpha1,
+             alpha2,
+             sigma_p,
+             sigma_l,
+             mu_p,
+             f1_norm,
+             f2_norm
+    ):
+    '''
+    Calculate the log acceptance ratio between two functions using the questionable norm.
+    '''
+    return 0.5 * ((((alpha1 - mu_p) ** 2 - (alpha2 - mu_p) ** 2) / sigma_p ** 2) + (f1_norm ** 2 - f2_norm ** 2)/ sigma_l ** 2)
+
+def A_mat(u):
+    '''
+    Format u.
+    '''
+    return u
+def random_walk_metropolis(alpha0,
+             y, 
+             sigma_q, 
+             sigma_p,
+             sigma_l,
+             mu_p,
+             nx,
+             ny,
+             tau,
+             epsilon,
+             iterations,
+             num_steps,
+    ):
+    '''
+    Carries out iterations of the random walk Metropolis-Hastings Algorithm using likelihood estimator.
+    '''
+
+    V, u, v, u_n, f, u_D, bc, mesh = solver_para(nx, ny, tau)
+    
+    alpha_list = [alpha0]
+    alpha1 = alpha0
+    u1 = solver_run(alpha1, V, u, v, u_n, f, u_D, bc, mesh, epsilon, num_steps)
+    u1_norm = np.linalg.norm(y-A_mat(u1))
+
+    for i in range(iterations):
+
+        alpha2 = np.random.normal(alpha1, sigma_q)
+        u2 = solver_run(alpha2, V, u, v, u_n, f, u_D, bc, mesh, epsilon, num_steps)
+        u2_norm = np.linalg.norm(y-A_mat(u2))
+
+        A = log_ratio(y, u1, u2, alpha1, alpha2, sigma_p, sigma_l, mu_p, u1_norm, u2_norm)
+
+        if A >= 0 or np.log(np.random.uniform(0,1)) <= A:
+            alpha1 = alpha2
+
+        alpha_list.append(alpha1)
+        
+        u1 = u2
+        u1_norm = u2_norm
+
+        print(i)
+
+    return alpha_list
+
+
+if __name__ == "__main__":
+
+    import pickle 
+
+    def main():
+
+        alpha_star = 3
+        alpha0 = 0
+        iterations = 1000
+        tau = 1/10
+        epsilon = 1/200
+        num_steps = 100
+        nx = 32
+        ny = 32
+
+        sigma_q = 0.1
+        sigma_p = 1
+        mu_p = 0
+        sigma_l = 0.2
+
+        var_noise = 0.3
+
+        V, u, v, u_n, f, u_D, bc, mesh = solver_para(nx, ny, tau)
+
+        with open('y_data_2', 'rb') as file:
+            y_star = pickle.load(file)
+        
+        y_star_coarse = time_organiser(y_star)
+
+        #y_star_coarse = solver_run(alpha_star, V, u, v, u_n, f, u_D, bc, mesh, epsilon, num_steps)
+
+        y = y_star_coarse + np.random.normal(0, var_noise, np.shape(y_star_coarse))
+
+        #+ np.random.normal(np.zeros(np.shape(y_star)), var_noise)
+
+        alpha_list = random_walk_metropolis(alpha0, y, sigma_q, sigma_p, sigma_l, mu_p, nx, ny, tau, epsilon, iterations, num_steps)
+
+        return alpha_list
+    
+    alpha_list = main()
+
+    print(alpha_list)
