@@ -5,19 +5,6 @@ import matplotlib.pyplot as plt
 from scipy.special import gamma
 import statsmodels.api as sm
 import seaborn as sns
-from Constant_Time_Solver import pred_exponential_time_dg
-
-def fenics_essentials_exponential(nx, ny, k):
-
-  # Create mesh and define function space
-  mesh = RectangleMesh(Point(-1, -1), Point(1, 1), nx, ny)
-  V = FunctionSpace(mesh, "P", k)
-
-  # Define variational problem
-  u = TrialFunction(V)
-  v = TestFunction(V)
-
-  return mesh, V, u, v
 
 def stretch_mesh(
         BottomPoint = (-1,-1),
@@ -58,17 +45,6 @@ def stretch_mesh(
 
     return mesh, V, u, v
 
-
-def generate_noise_data(parameter, sigma=0.01):
-  '''
-  A function that generates noise data
-  '''
-  mesh, V, u, v = fenics_essentials_exponential(nx=16, ny=16, k=1)
-  u = pred_exponential_time_dg(parameter, mesh, V, u, v)
-  eta = np.random.normal(0, sigma, (u.shape))
-  y = u + eta
-
-  return y
 
 def prior(x):
   return np.exp(-0.5 * x**2)/(np.sqrt(2*np.pi))
