@@ -99,6 +99,67 @@ def mcmc_diagnosis_plots(mcmc_chain, mcmc_acceptance_ratio, burn_in_period, lag,
 
     plt.show()
 
+def compare_diagnosis_plots(mcmc_chains,
+                            mcmc_acceptance_ratios,
+                            lag,
+                            nbins,
+                            labels,
+                            file_name):
+    '''
+    A function that compares the diagnostic plots of two chains
+
+    Arguments:
+        mcmc_chains:                tuple containing the chains
+        mcmc_acceptance_ratios:     tuple containing the acceptance ratios
+        lag:                        autocorrelation lag
+        nbins:                      number of bins for histogram
+        labels:                     tup;le containing the figure labels
+        file_name:                  name to save generated figure with
+    '''
+    # get the list of iterations
+    k = list(range(len(mcmc_chains[0])))
+
+    # calculate autocorrelations
+    acf_1 = sm.tsa.acf(mcmc_chains[0], nlags=lag)
+    laglist_1 = list(range(len(acf_1)))
+
+    acf_2 = sm.tsa.acf(mcmc_chains[1], nlags=lag)
+    laglist_2 = list(range(len(acf_2)))
+
+    # Create a trace and distribution plots of the estimated parameter
+    fig, ax = plt.subplots(2, 2, figsize=(10, 10))
+    ax[0,0].plot(k, mcmc_chains[0], label=labels[0])
+    ax[0,0].plot(k, mcmc_chains[1], label=labels[1])
+    ax[0,0].set_xlabel('$k$')
+    ax[0,0].set_ylabel(r'$ \alpha $')
+    ax[0,0].set_title(r'Trace plot of $\alpha$')
+    ax[0,0].legend()
+
+    sns.histplot(mcmc_chains[0], kde=True, stat="probability", bins=nbins, label=labels[0], ax=ax[0,1])
+    sns.histplot(mcmc_chains[1], kde=True, stat="probability", bins=nbins, label=labels[1], ax=ax[0,1])
+    ax[0,1].set_xlabel(r'$ \alpha $')
+    ax[0,1].set_title(r'Distribution plot of $ \alpha $')
+    ax[0,1].legend()
+    
+    ax[1,0].plot(range(0, len(mcmc_acceptance_ratios[0])), mcmc_acceptance_ratios[0], label=labels[0])
+    ax[1,0].plot(range(0, len(mcmc_acceptance_ratios[1])), mcmc_acceptance_ratios[1], label=labels[1])
+    ax[1,0].set_xlabel('$k$')
+    ax[1,0].set_ylabel(r'Acceptance ratio')
+    ax[1,0].set_title(r'Ratio of accepted state to the total number of states')
+    ax[1,0].legend()
+
+    ax[1,1].plot(laglist_1, acf_1, label=labels[0])
+    ax[1,1].plot(laglist_2, acf_2, label=labels[1])
+    ax[1,1].set_xlabel(r'lags $(k)$')
+    ax[1,1].set_ylabel(r'$ACF$')
+    ax[1,1].set_title(r'Autocorrelation plot')
+    ax[1,1].legend()
+
+
+    plt.savefig(fname=file_name, format='png')
+
+    plt.show()
+
 def load_data(fname):
     '''
     A function that loads and return data
