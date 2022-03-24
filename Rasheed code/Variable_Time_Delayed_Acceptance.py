@@ -78,7 +78,8 @@ def var_delayed_acceptance(expensive_data,
         
         # update the acceptance ratio list 
         acceptance_ratio_list.append(len(accepted_state_list)/len(alpha))
-
+        
+        # update cheap cheap likelihood
         cheap_A_0 = cheap_A
         i += 1
 
