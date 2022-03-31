@@ -1,7 +1,7 @@
 # PhD-project2
 Here are the codes for project 2: Bayesian Inference of the Double Glazing Model.
 
-All the final scripts used for generating results are found in the Final branch. 
+All the final scripts used for generating results are found in the Final-Results branch. 
 
 - master_script_interpolation and master_script_averages are the scripts used to generate the chains for each method, although each script can
 be used individually.
